@@ -26,34 +26,88 @@ export const BookmarkButton: Component<BookmarkButtonProps> = (props) => {
 
   const STORAGE_KEY = 'portfolio-bookmarks';
 
+  // Check if localStorage is available
+  const isLocalStorageAvailable = () => {
+    try {
+      if (typeof window === 'undefined' || typeof Storage === 'undefined') {
+        return false;
+      }
+      const test = '__localStorage_test__';
+      localStorage.setItem(test, test);
+      localStorage.removeItem(test);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  };
+
   // Load bookmark status from localStorage
   onMount(() => {
-    if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
+    if (!isLocalStorageAvailable()) {
+      console.warn('localStorage is not available. Bookmarks will not persist.');
+      return;
+    }
     
     try {
       const bookmarks = localStorage.getItem(STORAGE_KEY);
       if (bookmarks) {
         const parsedBookmarks: BookmarkedPost[] = JSON.parse(bookmarks);
-        const isCurrentPostBookmarked = parsedBookmarks.some(
-          (bookmark) => bookmark.id === props.postId
-        );
-        setIsBookmarked(isCurrentPostBookmarked);
+        if (Array.isArray(parsedBookmarks)) {
+          const isCurrentPostBookmarked = parsedBookmarks.some(
+            (bookmark) => bookmark && bookmark.id === props.postId
+          );
+          setIsBookmarked(isCurrentPostBookmarked);
+        }
       }
     } catch (error) {
       console.error('Error loading bookmarks:', error);
+      addToast({
+        type: "error",
+        title: "Error Loading Bookmarks",
+        description: "Failed to load saved bookmarks. Please try refreshing the page.",
+        duration: 4000
+      });
     }
   });
 
   const toggleBookmark = async () => {
-    if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
+    if (!isLocalStorageAvailable()) {
+      addToast({
+        type: "error",
+        title: "Storage Not Available",
+        description: "Bookmarks cannot be saved. Please check your browser settings.",
+        duration: 4000
+      });
+      return;
+    }
     
     setIsLoading(true);
     
     try {
       const bookmarks = localStorage.getItem(STORAGE_KEY);
-      let parsedBookmarks: BookmarkedPost[] = bookmarks ? JSON.parse(bookmarks) : [];
+      let parsedBookmarks: BookmarkedPost[] = [];
       
-      if (isBookmarked()) {
+      // Safely parse existing bookmarks
+      if (bookmarks) {
+        try {
+          const parsed = JSON.parse(bookmarks);
+          if (Array.isArray(parsed)) {
+            parsedBookmarks = parsed.filter(bookmark => 
+              bookmark && 
+              typeof bookmark.id === 'string' && 
+              typeof bookmark.title === 'string' && 
+              typeof bookmark.url === 'string'
+            );
+          }
+        } catch (parseError) {
+          console.warn('Invalid bookmark data found, resetting bookmarks:', parseError);
+          parsedBookmarks = [];
+        }
+      }
+      
+      const wasBookmarked = isBookmarked();
+      
+      if (wasBookmarked) {
         // Remove bookmark
         parsedBookmarks = parsedBookmarks.filter(
           (bookmark) => bookmark.id !== props.postId
@@ -74,7 +128,15 @@ export const BookmarkButton: Component<BookmarkButtonProps> = (props) => {
           url: props.postUrl,
           bookmarkedAt: new Date().toISOString(),
         };
-        parsedBookmarks.push(newBookmark);
+        
+        // Check for duplicates before adding
+        const existingIndex = parsedBookmarks.findIndex(b => b.id === props.postId);
+        if (existingIndex === -1) {
+          parsedBookmarks.push(newBookmark);
+        } else {
+          parsedBookmarks[existingIndex] = newBookmark;
+        }
+        
         setIsBookmarked(true);
         
         addToast({
@@ -85,18 +147,38 @@ export const BookmarkButton: Component<BookmarkButtonProps> = (props) => {
         });
       }
       
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(parsedBookmarks));
+      // Save to localStorage with error handling
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(parsedBookmarks));
+      } catch (storageError) {
+        console.error('Failed to save to localStorage:', storageError);
+        // Revert the state change
+        setIsBookmarked(wasBookmarked);
+        addToast({
+          type: "error",
+          title: "Storage Error",
+          description: "Failed to save bookmark. Storage may be full.",
+          duration: 4000
+        });
+        return;
+      }
       
       // Dispatch custom event for bookmark changes
-      window.dispatchEvent(new CustomEvent('bookmarkChanged', {
-        detail: { postId: props.postId, isBookmarked: !isBookmarked() }
-      }));
+      if (typeof window !== 'undefined') {
+        try {
+          window.dispatchEvent(new CustomEvent('bookmarkChanged', {
+            detail: { postId: props.postId, isBookmarked: !wasBookmarked }
+          }));
+        } catch (eventError) {
+          console.warn('Failed to dispatch bookmark event:', eventError);
+        }
+      }
       
     } catch (error) {
       console.error('Error toggling bookmark:', error);
       addToast({
         type: "error",
-        title: "Error",
+        title: "Unexpected Error",
         description: "Failed to update bookmark. Please try again.",
         duration: 4000
       });
@@ -133,33 +215,102 @@ export const BookmarkButton: Component<BookmarkButtonProps> = (props) => {
 // Utility functions for bookmark management
 export const getBookmarks = (): BookmarkedPost[] => {
   try {
+    if (typeof window === 'undefined' || typeof Storage === 'undefined') {
+      return [];
+    }
+    
     const bookmarks = localStorage.getItem('portfolio-bookmarks');
-    return bookmarks ? JSON.parse(bookmarks) : [];
+    if (!bookmarks) return [];
+    
+    const parsed = JSON.parse(bookmarks);
+    if (!Array.isArray(parsed)) return [];
+    
+    // Filter out invalid bookmarks
+    return parsed.filter(bookmark => 
+      bookmark && 
+      typeof bookmark.id === 'string' && 
+      typeof bookmark.title === 'string' && 
+      typeof bookmark.url === 'string' &&
+      typeof bookmark.bookmarkedAt === 'string'
+    );
   } catch (error) {
     console.error('Error getting bookmarks:', error);
     return [];
   }
 };
 
-export const clearAllBookmarks = (): void => {
+export const clearAllBookmarks = (): boolean => {
   try {
+    if (typeof window === 'undefined' || typeof Storage === 'undefined') {
+      console.warn('localStorage is not available');
+      return false;
+    }
+    
     localStorage.removeItem('portfolio-bookmarks');
-    window.dispatchEvent(new CustomEvent('bookmarksCleared'));
+    
+    try {
+      window.dispatchEvent(new CustomEvent('bookmarksCleared'));
+    } catch (eventError) {
+      console.warn('Failed to dispatch bookmarksCleared event:', eventError);
+    }
+    
+    return true;
   } catch (error) {
     console.error('Error clearing bookmarks:', error);
+    return false;
   }
 };
 
 export const exportBookmarks = (): string => {
-  const bookmarks = getBookmarks();
-  return JSON.stringify(bookmarks, null, 2);
+  try {
+    const bookmarks = getBookmarks();
+    return JSON.stringify(bookmarks, null, 2);
+  } catch (error) {
+    console.error('Error exporting bookmarks:', error);
+    return '[]';
+  }
 };
 
 export const importBookmarks = (bookmarksJson: string): boolean => {
   try {
+    if (typeof window === 'undefined' || typeof Storage === 'undefined') {
+      console.warn('localStorage is not available');
+      return false;
+    }
+    
+    if (!bookmarksJson || typeof bookmarksJson !== 'string') {
+      console.error('Invalid bookmarks data provided');
+      return false;
+    }
+    
     const bookmarks = JSON.parse(bookmarksJson);
-    localStorage.setItem('portfolio-bookmarks', JSON.stringify(bookmarks));
-    window.dispatchEvent(new CustomEvent('bookmarksImported'));
+    
+    if (!Array.isArray(bookmarks)) {
+      console.error('Bookmarks data must be an array');
+      return false;
+    }
+    
+    // Validate and filter bookmarks
+    const validBookmarks = bookmarks.filter(bookmark => 
+      bookmark && 
+      typeof bookmark.id === 'string' && 
+      typeof bookmark.title === 'string' && 
+      typeof bookmark.url === 'string' &&
+      typeof bookmark.bookmarkedAt === 'string'
+    );
+    
+    if (validBookmarks.length !== bookmarks.length) {
+      console.warn(`Filtered out ${bookmarks.length - validBookmarks.length} invalid bookmarks`);
+    }
+    
+    localStorage.setItem('portfolio-bookmarks', JSON.stringify(validBookmarks));
+    
+    try {
+      window.dispatchEvent(new CustomEvent('bookmarksImported'));
+    } catch (eventError) {
+      console.warn('Failed to dispatch bookmarksImported event:', eventError);
+    }
+    
     return true;
   } catch (error) {
     console.error('Error importing bookmarks:', error);

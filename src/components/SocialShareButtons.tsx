@@ -53,19 +53,74 @@ const SocialShareButtonsInner: Component<SocialShareButtonsProps> = (props) => {
       });
       return;
     }
-    try {
-      await navigator.clipboard.writeText(props.url);
-      addToast({
-        type: "success",
-        title: "Link Copied!",
-        description: "Link has been copied to clipboard",
-        duration: 2000,
-      });
-    } catch (error) {
+    
+    if (!props.url) {
       addToast({
         type: "error",
         title: "Failed to copy",
-        description: "Could not copy link to clipboard",
+        description: "No URL provided to copy",
+        duration: 3000,
+      });
+      return;
+    }
+    
+    try {
+      let copySuccess = false;
+      
+      // Try modern clipboard API first
+      if (navigator.clipboard && window.isSecureContext) {
+        try {
+          await navigator.clipboard.writeText(props.url);
+          copySuccess = true;
+        } catch (clipboardError) {
+          console.warn('Clipboard API failed, trying fallback:', clipboardError);
+        }
+      }
+      
+      // Fallback for older browsers or when clipboard API fails
+      if (!copySuccess && typeof document !== "undefined") {
+        try {
+          const textArea = document.createElement("textarea");
+          textArea.value = props.url;
+          textArea.style.position = "fixed";
+          textArea.style.left = "-999999px";
+          textArea.style.top = "-999999px";
+          textArea.style.opacity = "0";
+          textArea.setAttribute("readonly", "");
+          textArea.setAttribute("aria-hidden", "true");
+          
+          document.body.appendChild(textArea);
+          textArea.focus();
+          textArea.select();
+          textArea.setSelectionRange(0, 99999);
+          
+          const successful = document.execCommand("copy");
+          document.body.removeChild(textArea);
+          
+          if (successful) {
+            copySuccess = true;
+          }
+        } catch (fallbackError) {
+          console.error('Fallback copy method failed:', fallbackError);
+        }
+      }
+      
+      if (copySuccess) {
+        addToast({
+          type: "success",
+          title: "Link Copied!",
+          description: "Link has been copied to clipboard",
+          duration: 2000,
+        });
+      } else {
+        throw new Error('All copy methods failed');
+      }
+    } catch (error) {
+      console.error('Copy failed:', error);
+      addToast({
+        type: "error",
+        title: "Failed to copy",
+        description: "Could not copy link to clipboard. Please try again.",
         duration: 3000,
       });
     }

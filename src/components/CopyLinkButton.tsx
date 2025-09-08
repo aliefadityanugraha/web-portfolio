@@ -1,4 +1,5 @@
 import { createSignal, type Component } from "solid-js";
+import { useToast } from "@/components/ToastProvider";
 
 export type CopyLinkButtonProps = {
   url?: string;
@@ -9,48 +10,111 @@ export type CopyLinkButtonProps = {
 export const CopyLinkButton: Component<CopyLinkButtonProps> = (props) => {
   const [copied, setCopied] = createSignal(false);
   const [isLoading, setIsLoading] = createSignal(false);
+  const { addToast } = useToast();
+
+  // Check if clipboard API is available
+  const isClipboardAvailable = () => {
+    return (
+      typeof window !== "undefined" &&
+      typeof navigator !== "undefined" &&
+      (navigator.clipboard || document.execCommand)
+    );
+  };
 
   const copyToClipboard = async () => {
     if (isLoading()) return;
-    if (
-      typeof window === "undefined" ||
-      typeof navigator === "undefined" ||
-      typeof document === "undefined"
-    )
+    
+    if (!isClipboardAvailable()) {
+      addToast({
+        type: "error",
+        title: "Copy Not Supported",
+        description: "Your browser doesn't support copying to clipboard.",
+        duration: 4000
+      });
       return;
+    }
 
     setIsLoading(true);
 
     try {
-      const urlToCopy = props.url || window.location.href;
-
-      if (navigator.clipboard && window.isSecureContext) {
-        // Use modern clipboard API
-        await navigator.clipboard.writeText(urlToCopy);
-      } else {
-        // Fallback for older browsers
-        const textArea = document.createElement("textarea");
-        textArea.value = urlToCopy;
-        textArea.style.position = "fixed";
-        textArea.style.left = "-999999px";
-        textArea.style.top = "-999999px";
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        document.execCommand("copy");
-        textArea.remove();
+      const urlToCopy = props.url || (typeof window !== "undefined" ? window.location.href : "");
+      
+      if (!urlToCopy) {
+        throw new Error("No URL to copy");
       }
 
-      setCopied(true);
+      let copySuccess = false;
 
-      // Reset copied state after 2 seconds
-      if (typeof window !== "undefined") {
-        setTimeout(() => {
-          setCopied(false);
-        }, 2000);
+      // Try modern clipboard API first
+      if (navigator.clipboard && window.isSecureContext) {
+        try {
+          await navigator.clipboard.writeText(urlToCopy);
+          copySuccess = true;
+        } catch (clipboardError) {
+          console.warn("Clipboard API failed, trying fallback:", clipboardError);
+        }
+      }
+
+      // Fallback for older browsers or when clipboard API fails
+      if (!copySuccess) {
+        try {
+          const textArea = document.createElement("textarea");
+          textArea.value = urlToCopy;
+          textArea.style.position = "fixed";
+          textArea.style.left = "-999999px";
+          textArea.style.top = "-999999px";
+          textArea.style.opacity = "0";
+          textArea.setAttribute("readonly", "");
+          textArea.setAttribute("aria-hidden", "true");
+          
+          document.body.appendChild(textArea);
+          
+          // Select the text
+          textArea.focus();
+          textArea.select();
+          textArea.setSelectionRange(0, 99999); // For mobile devices
+          
+          // Try to copy
+          const successful = document.execCommand("copy");
+          document.body.removeChild(textArea);
+          
+          if (!successful) {
+            throw new Error("execCommand failed");
+          }
+          
+          copySuccess = true;
+        } catch (fallbackError) {
+          console.error("Fallback copy method failed:", fallbackError);
+        }
+      }
+
+      if (copySuccess) {
+        setCopied(true);
+        
+        addToast({
+          type: "success",
+          title: "Link Copied!",
+          description: "Link has been copied to clipboard",
+          duration: 2000
+        });
+
+        // Reset copied state after 2 seconds
+        if (typeof window !== "undefined") {
+          setTimeout(() => {
+            setCopied(false);
+          }, 2000);
+        }
+      } else {
+        throw new Error("All copy methods failed");
       }
     } catch (err) {
       console.error("Failed to copy link:", err);
+      addToast({
+        type: "error",
+        title: "Copy Failed",
+        description: "Could not copy link to clipboard. Please try again.",
+        duration: 4000
+      });
     } finally {
       setIsLoading(false);
     }
@@ -102,22 +166,64 @@ export const CopyLinkButton: Component<CopyLinkButtonProps> = (props) => {
 // Utility function to copy text to clipboard
 export const copyToClipboard = async (text: string): Promise<boolean> => {
   try {
-    if (navigator.clipboard && window.isSecureContext) {
-      await navigator.clipboard.writeText(text);
-    } else {
-      // Fallback for older browsers
-      const textArea = document.createElement("textarea");
-      textArea.value = text;
-      textArea.style.position = "fixed";
-      textArea.style.left = "-999999px";
-      textArea.style.top = "-999999px";
-      document.body.appendChild(textArea);
-      textArea.focus();
-      textArea.select();
-      document.execCommand("copy");
-      textArea.remove();
+    if (!text || typeof text !== 'string') {
+      console.error('Invalid text provided for copying');
+      return false;
     }
-    return true;
+
+    if (
+      typeof window === "undefined" ||
+      typeof navigator === "undefined" ||
+      typeof document === "undefined"
+    ) {
+      console.warn('Browser environment not available for copying');
+      return false;
+    }
+
+    let copySuccess = false;
+
+    // Try modern clipboard API first
+    if (navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(text);
+        copySuccess = true;
+      } catch (clipboardError) {
+        console.warn('Clipboard API failed, trying fallback:', clipboardError);
+      }
+    }
+
+    // Fallback for older browsers or when clipboard API fails
+    if (!copySuccess) {
+      try {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        textArea.style.top = "-999999px";
+        textArea.style.opacity = "0";
+        textArea.setAttribute("readonly", "");
+        textArea.setAttribute("aria-hidden", "true");
+        
+        document.body.appendChild(textArea);
+        
+        // Select the text
+        textArea.focus();
+        textArea.select();
+        textArea.setSelectionRange(0, 99999); // For mobile devices
+        
+        // Try to copy
+        const successful = document.execCommand("copy");
+        document.body.removeChild(textArea);
+        
+        if (successful) {
+          copySuccess = true;
+        }
+      } catch (fallbackError) {
+        console.error('Fallback copy method failed:', fallbackError);
+      }
+    }
+
+    return copySuccess;
   } catch (err) {
     console.error("Failed to copy to clipboard:", err);
     return false;

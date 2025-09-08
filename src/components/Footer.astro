@@ -1,0 +1,33 @@
+---
+import { SiAstro, SiSolid } from "solid-icons/si";
+import LinkIcon, { type LinkIconProps } from "./LinkIcon.astro";
+
+const year = new Date().getFullYear();
+
+const techStackClassName = "h-4 w-4 hover:opacity-80 transition-opacity";
+const techStack: LinkIconProps[] = [
+  {
+    href: "https://astro.build/",
+    Icon: SiAstro,
+    ariaLabel: "Astro",
+    className: techStackClassName,
+  },
+  {
+    href: "https://docs.solidjs.com/",
+    Icon: SiSolid,
+    ariaLabel: "SolidJS",
+    className: techStackClassName,
+  },
+];
+---
+
+<footer class="w-full flex flex-col gap-2">
+  <small class="text-xs text-muted-foreground">
+    {`Copyright (c) ${year} aliefadityanugraha. All rights reserved.`}
+  </small>
+
+  <div class="text-xs text-muted-foreground flex gap-2 items-center">
+    <span>Website built with</span>
+    {techStack.map((t) => <LinkIcon {...t} />)}
+  </div>
+</footer>

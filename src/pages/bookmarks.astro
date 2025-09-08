@@ -1,0 +1,18 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { BookmarksList } from "@/components/BookmarksList";
+---
+
+<Layout title="aliefadityanugraha - Bookmarks">
+  <section>
+    <h3 class="scroll-m-20 text-2xl font-semibold tracking-tight">
+      My Bookmarks
+    </h3>
+    <p class="text-muted-foreground mt-2">
+      Your saved blog posts are stored locally in your browser.
+    </p>
+    <div class="mt-6">
+      <BookmarksList client:visible />
+    </div>
+  </section>
+</Layout>

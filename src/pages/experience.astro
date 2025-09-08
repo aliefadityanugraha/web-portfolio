@@ -1,0 +1,80 @@
+---
+import { BentoGrid, BentoGridItem } from "@/components/BentoGrid";
+import { Separator } from "@/components/ui/separator";
+import {
+  openSourceContrib,
+  professionalExperiences,
+  projects,
+} from "@/constants/experience";
+import Layout from "@/layouts/Layout.astro";
+---
+
+<Layout
+  title="aliefadityanugraha - Blogs"
+  description="Selected experience and contributions"
+>
+  <section class="flex flex-col gap-3">
+    <h3 class="scroll-m-20 text-2xl font-semibold tracking-tight">
+      Experience
+    </h3>
+    <p class="text-muted-foreground">
+      Backend/Frontend engineer berfokus pada performance, DX tooling, dan
+      reliability. Berpengalaman membangun produk end‑to‑end dengan TypeScript,
+      Go, Rust, dan Astro/Solid.
+    </p>
+    <div class="flex flex-wrap gap-2 text-xs">
+      <span class="px-2 py-1 rounded-full border">TypeScript</span>
+      <span class="px-2 py-1 rounded-full border">Go</span>
+      <span class="px-2 py-1 rounded-full border">Rust</span>
+      <span class="px-2 py-1 rounded-full border">Astro</span>
+      <span class="px-2 py-1 rounded-full border">SolidJS</span>
+    </div>
+  </section>
+  <Separator />
+  <section>
+    <h3 class="scroll-m-20 text-2xl font-semibold tracking-tight">
+      Professional
+    </h3>
+    <BentoGrid class="mt-6">
+      {professionalExperiences.map((props) => <BentoGridItem {...props} />)}
+    </BentoGrid>
+  </section>
+  <Separator />
+  <section>
+    <h3 class="scroll-m-20 text-2xl font-semibold tracking-tight">
+      Open Source
+    </h3>
+    <BentoGrid class="mt-6">
+      {openSourceContrib.map((props) => <BentoGridItem {...props} />)}
+    </BentoGrid>
+  </section>
+  <Separator />
+  <section>
+    <h3 class="scroll-m-20 text-2xl font-semibold tracking-tight">Projects</h3>
+    <BentoGrid class="mt-6">
+      {projects.map((props) => <BentoGridItem {...props} />)}
+    </BentoGrid>
+  </section>
+  <Separator />
+  <section class="flex flex-col gap-2">
+    <h3 class="scroll-m-20 text-2xl font-semibold tracking-tight">
+      Tertarik berkolaborasi?
+    </h3>
+    <p class="text-muted-foreground">
+      Saya terbuka untuk peluang freelance maupun full‑time. Ceritakan kebutuhan
+      Anda, saya bantu buatkan solusi yang efektif.
+    </p>
+    <div class="flex gap-3 flex-wrap">
+      <a
+        href="mailto:you@example.com"
+        class="px-4 py-2 rounded-md border bg-primary text-primary-foreground hover:opacity-90 transition"
+        >Hubungi Saya</a
+      >
+      <a
+        href="/wu_xiaoyun_resume.pdf"
+        class="px-4 py-2 rounded-md border hover:bg-accent transition"
+        >Unduh CV</a
+      >
+    </div>
+  </section>
+</Layout>

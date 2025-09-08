@@ -1,0 +1,211 @@
+---
+import { ClientRouter } from "astro:transitions";
+import Footer from "@/components/Footer.astro";
+import Header from "@/components/Header.astro";
+import { ReadingProgressBar } from "@/components/ReadingProgressBar";
+import { ScrollToTopButton } from "@/components/ScrollToTopButton";
+import ThemeScript from "@/components/ThemeScript.astro";
+import { ToastProvider } from "@/components/ToastProvider";
+import { Separator } from "@/components/ui/separator";
+import "@/index.css";
+import "@/styles/print.css";
+import { AstroFont } from "astro-font";
+
+import favicon from "../assets/favicon.ico";
+
+export type LayoutProps = {
+  title: string;
+  description?: string;
+  ogImage?: string;
+};
+
+const { title = "aliefadityanugraha", description = "aliefadityanugraha's portfolio page", ogImage } = Astro.props as LayoutProps;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content={description} />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/x-icon" href={favicon} />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+    
+    <!-- Resource hints for faster loading -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="dns-prefetch" href="https://miro.medium.com" />
+    <ClientRouter />
+    <style>
+      @view-transition {
+        navigation: auto;
+      }
+      
+      /* Page transition classes */
+      .page-transition-out {
+        opacity: 0.8;
+        transition: opacity 0.06s ease-out;
+      }
+      
+      .page-transition-in {
+        opacity: 1;
+        transform: translateX(0);
+        transition: opacity 0.12s ease-in, transform 0.12s ease-in;
+      }
+      
+      /* Smooth page transitions */
+      html {
+        view-transition-name: root;
+        scrollbar-gutter: stable;
+      }
+    </style>
+    <AstroFont
+      config={[
+        {
+          src: [],
+          name: "Inter",
+          googleFontsURL:
+            "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap",
+          display: "swap",
+          selector: "body",
+          fallback: "sans-serif",
+        },
+      ]}
+    />
+
+    <ThemeScript />
+
+    <script>
+      // Menangani persistensi tema saat navigasi
+      document.addEventListener('astro:after-swap', () => {
+        // Menerapkan tema yang tersimpan setelah navigasi
+        const theme = localStorage.getItem('theme') || 'system';
+        document.documentElement.classList.toggle('dark', 
+          theme === 'dark' || 
+          (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches));
+      });
+
+      // Menangani state komponen saat navigasi
+      document.addEventListener('astro:page-load', () => {
+        // Reinisialisasi komponen jika diperlukan
+        // Ini akan dijalankan setiap kali halaman baru dimuat
+      });
+
+      // Mencegah indikator loading browser muncul saat navigasi
+      document.addEventListener('astro:before-preparation', () => {
+        // Menyembunyikan loading indicator jika ada
+        const loadingIndicator = document.querySelector('.loading-indicator') as HTMLElement;
+        if (loadingIndicator) {
+          loadingIndicator.style.display = 'none';
+        }
+      });
+
+      // Menangani navigasi dengan smooth transitions
+      document.addEventListener('astro:before-preparation', () => {
+        // Tambahkan class untuk animasi keluar
+        document.documentElement.classList.add('page-transition-out');
+      });
+
+      document.addEventListener('astro:after-swap', () => {
+        // Hapus class animasi keluar dan tambahkan class animasi masuk
+        document.documentElement.classList.remove('page-transition-out');
+        document.documentElement.classList.add('page-transition-in');
+        
+        // Hapus class animasi masuk setelah animasi selesai
+        setTimeout(() => {
+          document.documentElement.classList.remove('page-transition-in');
+        }, 160);
+      });
+
+      // Prefetch tautan internal untuk mempercepat navigasi
+      (function setupLinkPrefetching() {
+        const prefetched = new Set<string>();
+
+        function isInternalLink(anchor: HTMLAnchorElement) {
+          if (!anchor.href) return false;
+          const url = new URL(anchor.href, location.href);
+          return url.origin === location.origin && !url.hash && !url.href.endsWith('#');
+        }
+
+        function prefetch(href: string) {
+          if (!href || prefetched.has(href)) return;
+          prefetched.add(href);
+          const link = document.createElement('link');
+          link.rel = 'prefetch';
+          link.href = href;
+          // as=document is fine for HTML; omit for broad support
+          document.head.appendChild(link);
+        }
+
+        function bindHoverPrefetch(links: NodeListOf<HTMLAnchorElement>) {
+          links.forEach((a) => {
+            if (!isInternalLink(a)) return;
+            const href = a.getAttribute('href');
+            if (!href) return;
+            const onHover = () => prefetch(href);
+            a.addEventListener('mouseover', onHover, { passive: true, once: true });
+            a.addEventListener('touchstart', onHover, { passive: true, once: true });
+          });
+        }
+
+        function bindViewportPrefetch(links: NodeListOf<HTMLAnchorElement>) {
+          if (!('IntersectionObserver' in window)) return;
+          const observer = new IntersectionObserver((entries) => {
+            for (const entry of entries) {
+              if (!entry.isIntersecting) continue;
+              const a = entry.target as HTMLAnchorElement;
+              const href = a.getAttribute('href');
+              if (href) prefetch(href);
+              observer.unobserve(a);
+            }
+          }, { rootMargin: '250px' });
+
+          links.forEach((a) => {
+            if (!isInternalLink(a)) return;
+            observer.observe(a);
+          });
+        }
+
+        function init() {
+          const links = document.querySelectorAll<HTMLAnchorElement>('a[href]');
+          bindHoverPrefetch(links);
+          bindViewportPrefetch(links);
+        }
+
+        // Inisialisasi pada load pertama dan setiap navigasi
+        document.addEventListener('astro:page-load', init);
+        document.addEventListener('astro:after-swap', init);
+      })();
+    </script>
+    {ogImage && (
+      <>
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={description} />
+        <meta property="og:image" content={ogImage} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={title} />
+        <meta name="twitter:description" content={description} />
+        <meta name="twitter:image" content={ogImage} />
+      </>
+    )}
+  </head>
+  <body class="antialiased bg-background">
+    <ReadingProgressBar client:visible />
+    <ToastProvider>
+      <div
+        class="min-h-[100dvh] w-full max-w-4xl mx-auto flex flex-col gap-6 py-12 px-3 sm:p-12"
+      >
+        <Header />
+        <main class="flex flex-col gap-12 py-6">
+          <slot />
+          <div class="flex flex-col gap-6">
+            <Separator />
+            <Footer />
+          </div>
+        </main>
+      </div>
+      <ScrollToTopButton client:visible />
+    </ToastProvider>
+  </body>
+</html>

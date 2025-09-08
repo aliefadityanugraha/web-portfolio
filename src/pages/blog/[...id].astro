@@ -1,0 +1,153 @@
+---
+import MediumArticle from "@/components/MediumArticle.astro";
+import { ReadingTimeEstimator } from "@/components/ReadingTimeEstimator";
+import { CopyLinkButton } from "@/components/CopyLinkButton";
+import { BookmarkButton } from "@/components/BookmarkButton";
+import { ExportPDFButton } from "@/components/ExportPDFButton";
+import { FloatingTOC, InlineTOC } from "@/components/TableOfContents";
+import {
+  SocialShareButtons,
+  FloatingSocialShare,
+} from "@/components/SocialShareButtons";
+import { Separator } from "@/components/ui/separator";
+import { getSortedBlogEntries } from "@/content/util";
+import Layout from "@/layouts/Layout.astro";
+import { type CollectionEntry, render } from "astro:content";
+
+export async function getStaticPaths() {
+  const blogEntries = await getSortedBlogEntries();
+  return blogEntries.map((entry, i) => ({
+    params: { id: entry.id },
+    props: {
+      entry,
+      index: i,
+    },
+  }));
+}
+
+export type BlogPostProps = {
+  entry: CollectionEntry<"blog">;
+  index: number;
+};
+
+const { entry, index } = Astro.props as BlogPostProps;
+const item = entry.data;
+const blogTitle = item.title;
+const blogEntries = await getSortedBlogEntries();
+
+// Randomly select 3 other blog entries to show
+const otherEntries = blogEntries.filter((b) => b.id !== entry.id);
+otherEntries.sort(() => Math.random() - 0.5);
+otherEntries.splice(3);
+
+const pubDate = new Date(item.pubDate).toLocaleDateString("en-US", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+});
+
+const { Content } = await render(entry);
+const contentString = entry.body || "";
+const currentUrl = new URL(Astro.url.pathname, Astro.site).toString();
+
+const thumbnail = item.thumbnail as string | undefined;
+const ogImage = thumbnail
+  ? thumbnail.startsWith("http")
+    ? thumbnail
+    : new URL(
+        thumbnail.startsWith("/") ? thumbnail : `/${thumbnail}`,
+        Astro.site,
+      ).toString()
+  : undefined;
+---
+
+<Layout
+  title={blogTitle}
+  description={item.description || item.preview}
+  ogImage={ogImage}
+>
+  <nav class="text-sm text-muted-foreground mb-2" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-1 flex-wrap">
+      <li>
+        <a href="/" class="hover:underline" data-astro-prefetch="hover">Home</a>
+      </li>
+      <li aria-hidden="true" class="px-1">/</li>
+      <li>
+        <a href="/blog" class="hover:underline" data-astro-prefetch="hover"
+          >Blog</a
+        >
+      </li>
+      <li aria-hidden="true" class="px-1">/</li>
+      <li class="text-foreground line-clamp-1 max-w-full" aria-current="page">
+        {blogTitle}
+      </li>
+    </ol>
+  </nav>
+  <div class="flex flex-col gap-4 mb-6">
+    <div class="post-meta flex items-center justify-between flex-wrap gap-2">
+      <time
+        datetime={item.pubDate.toISOString()}
+        class="text-sm text-muted-foreground"
+      >
+        {`Posted on ${pubDate}`}
+      </time>
+      <div class="flex items-center gap-3 flex-wrap">
+        <ReadingTimeEstimator content={contentString} client:visible />
+        <BookmarkButton
+          postId={entry.id}
+          postTitle={blogTitle}
+          postUrl={Astro.url.pathname}
+          client:visible
+        />
+        <ExportPDFButton
+          postTitle={blogTitle}
+          postContent={contentString}
+          postDate={item.pubDate.toLocaleDateString()}
+          author="aliefadityanugraha"
+          client:visible
+        />
+        <CopyLinkButton client:visible />
+      </div>
+    </div>
+  </div>
+  <InlineTOC
+    contentSelector=".content"
+    minHeadings={3}
+    maxLevel={4}
+    client:visible
+  />
+  <article
+    class="content prose prose-neutral dark:prose-invert sm:prose-lg w-full prose-p:text-left prose-li:text-left"
+  >
+    <h1 class="article-title">{blogTitle}</h1>
+    <Content />
+  </article>
+  <FloatingTOC
+    contentSelector=".content"
+    minHeadings={3}
+    maxLevel={4}
+    client:visible
+  />
+  <div class="flex flex-col gap-4 py-6">
+    <h4 class="text-lg font-semibold">Share this article</h4>
+    <SocialShareButtons
+      url={currentUrl}
+      title={blogTitle}
+      description={item.description || item.preview}
+      client:visible
+    />
+  </div>
+  <Separator />
+  <section class="blog-content">
+    <h4 class="scroll-m-20 text-xl font-semibold tracking-tight">
+      More blogs from me
+    </h4>
+    <div class="mt-6 flex flex-col gap-3">
+      {
+        otherEntries.map((entry) => (
+          <MediumArticle entry={entry} isTop={false} />
+        ))
+      }
+    </div>
+  </section>
+</Layout>

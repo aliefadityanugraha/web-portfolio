@@ -1,0 +1,132 @@
+---
+import {
+  FaBrandsGithub,
+  FaBrandsInstagram,
+  FaBrandsYoutube,
+} from "solid-icons/fa";
+import { SiGmail } from "solid-icons/si";
+import type { LinkIconProps } from "./LinkIcon.astro";
+import LinkIcon from "./LinkIcon.astro";
+import { DarkModeToggle } from "./DarkModeToggle";
+
+const navItemProps = [
+  {
+    title: "Home",
+    href: "/",
+  },
+  {
+    title: "Experience",
+    href: "/experience",
+  },
+  {
+    title: "Blog",
+    href: "/blog",
+  },
+  {
+    title: "Bookmarks",
+    href: "/bookmarks",
+  },
+  {
+    title: "Showcase",
+    href: "/showcase",
+  },
+];
+
+const socialLinkClassName =
+  "h-6 w-6 opacity-40 hover:opacity-80 transition-opacity";
+const socialLinkProps: LinkIconProps[] = [
+  {
+    Icon: FaBrandsGithub,
+    href: "https://github.com/aliefadityanugraha",
+    ariaLabel: "GitHub",
+    className: socialLinkClassName,
+  },
+  {
+    Icon: FaBrandsInstagram,
+    href: "https://instagram.com/aliefaditya.n",
+    ariaLabel: "Instagram",
+    className: socialLinkClassName,
+  },
+  {
+    Icon: FaBrandsYoutube,
+    href: "https://youtube.com/",
+    ariaLabel: "YouTube",
+    className: socialLinkClassName,
+  },
+  {
+    Icon: SiGmail,
+    href: "mailto:adty.nv@gmail.com",
+    ariaLabel: "Email",
+    className: socialLinkClassName,
+  },
+];
+
+const currentPath = Astro.url.pathname;
+const isActive = (href: string) =>
+  href === "/" ? href === currentPath : currentPath.startsWith(href);
+---
+
+<header class="w-full">
+  <div class="flex items-center justify-between gap-3">
+    <a href="/" class="font-semibold tracking-tight text-lg bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent" style="view-transition-name: site-nav">aliefadityanugraha</a>
+
+    <nav class="hidden md:flex items-center gap-1 rounded-full border bg-card p-1 shadow-sm">
+      {navItemProps.map((props) => (
+        <a href={props.href} data-astro-prefetch="hover" class={`px-3 py-2 rounded-full text-sm transition ${isActive(props.href) ? 'bg-accent text-accent-foreground font-medium' : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'}`}>
+          {props.title}
+        </a>
+      ))}
+    </nav>
+
+    <div class="flex items-center gap-3">
+      <DarkModeToggle client:idle />
+      <button id="menu-toggle" class="md:hidden inline-flex items-center gap-2 px-3 py-2 rounded-md border hover:bg-accent transition">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-5 h-5"><path fill="currentColor" d="M3 6h18M3 12h18M3 18h18"/></svg>
+        <span class="sr-only">Toggle menu</span>
+      </button>
+      <div class="hidden sm:flex gap-4">
+        {socialLinkProps.map((props) => <LinkIcon {...props} />)}
+      </div>
+    </div>
+  </div>
+
+  <div id="mobile-menu" class="md:hidden mt-3 hidden">
+    <nav class="flex flex-col gap-1 rounded-xl border bg-card p-2 shadow-sm">
+      {navItemProps.map((props) => (
+        <a href={props.href} data-astro-prefetch="hover" class={`px-3 py-2 rounded-lg text-sm transition ${isActive(props.href) ? 'bg-accent text-accent-foreground font-medium' : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'}`}>
+          {props.title}
+        </a>
+      ))}
+      <div class="flex items-center gap-3 px-2 pt-2 border-t">
+        {socialLinkProps.map((props) => <LinkIcon {...props} />)}
+      </div>
+    </nav>
+  </div>
+
+  <script>
+    const btn = document.getElementById('menu-toggle');
+    const menu = document.getElementById('mobile-menu');
+    btn?.addEventListener('click', () => {
+      if (!menu) return;
+      const isHidden = menu.classList.contains('hidden');
+      menu.classList.toggle('hidden', !isHidden);
+    });
+    document.addEventListener('astro:after-swap', () => {
+      // Close menu on navigation
+      menu?.classList.add('hidden');
+    });
+  </script>
+
+  <style>
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+  </style>
+</header>
+
+<style>
+  .no-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+</style>

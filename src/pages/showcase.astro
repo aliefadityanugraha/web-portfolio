@@ -1,0 +1,160 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { Separator } from "@/components/ui/separator";
+import YoutubeEmbed from "@/components/YoutubeEmbed.astro";
+import { BookmarkButton } from "@/components/BookmarkButton";
+import { Image } from 'astro:assets';
+
+// Auto-load images with paths for deriving titles
+const localImages = Object.entries(import.meta.glob(
+  "../assets/showcase/*.{jpg,jpeg,png,webp,avif,gif}",
+  { eager: true }
+));
+
+const getTitleFromSrc = (src: string): string => {
+  try {
+    const url = new URL(src, 'http://local');
+    const raw = (url.pathname.split('/').pop() || 'image').replace(/\.[^/.]+$/, '');
+    return decodeURIComponent(raw.replace(/[-_]+/g, ' '));
+  } catch {
+    const clean = src.split('?')[0];
+    const raw = (clean.split('/').pop() || 'image').replace(/\.[^/.]+$/, '');
+    return decodeURIComponent(raw.replace(/[-_]+/g, ' '));
+  }
+};
+---
+
+<Layout title="Showcase" description="Foto dan video pilihan">
+  <section class="flex flex-col gap-4">
+    <h1 class="text-3xl sm:text-4xl font-bold tracking-tight">Showcase</h1>
+    <p class="text-muted-foreground">Kumpulan foto dan video pilihan.</p>
+  </section>
+
+  <Separator />
+
+  <section class="w-full">
+    <h3 class="scroll-m-20 text-2xl font-semibold tracking-tight">Foto</h3>
+    <div class="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+      {localImages.length > 0 ? (
+        localImages.map(([path, mod], i) => (
+          <div class="group relative">
+            <button type="button" data-preview="image" data-src={(mod as any).default.src} class="block w-full text-left">
+              <Image
+                src={(mod as any).default}
+                alt={getTitleFromSrc((mod as any).default.src)}
+                class="w-full h-40 object-cover rounded-md border transition-transform duration-300 group-hover:scale-[1.02]"
+              />
+            </button>
+            <div class="absolute top-2 right-2">
+              <BookmarkButton client:load postId={`photo-${i}`} postTitle={getTitleFromSrc((mod as any).default.src)} postUrl={(mod as any).default.src} hideLabel={true} />
+            </div>
+          </div>
+        ))
+      ) : (
+        [
+          "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1200&auto=format&fit=crop"
+        ].map((src, i) => (
+          <div class="group relative">
+            <button type="button" data-preview="image" data-src={src} class="block w-full text-left">
+              <img
+                src={src}
+                alt={getTitleFromSrc(src)}
+                loading="lazy"
+                class="w-full h-40 object-cover rounded-md border transition-transform duration-300 group-hover:scale-[1.02]"
+              />
+            </button>
+            <div class="absolute top-2 right-2">
+              <BookmarkButton client:load postId={`photo-${i}`} postTitle={getTitleFromSrc(src)} postUrl={src} hideLabel={true} />
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  </section>
+
+  <Separator />
+
+  <section class="w-full">
+    <h3 class="scroll-m-20 text-2xl font-semibold tracking-tight">Video</h3>
+    <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
+      <div class="relative" data-preview="video" data-youtube-id="dQw4w9WgXcQ">
+        <YoutubeEmbed id="dQw4w9WgXcQ" title="Sample Video" />
+        <div class="absolute top-2 right-2">
+          <BookmarkButton client:load postId={`video-dQw4w9WgXcQ`} postTitle={`Sample Video`} postUrl={`https://www.youtube.com/watch?v=dQw4w9WgXcQ`} hideLabel={true} />
+        </div>
+      </div>
+      <div class="relative" data-preview="video" data-youtube-id="bTqVqk7FSmY">
+        <YoutubeEmbed id="bTqVqk7FSmY" title="Nature Timelapse" />
+        <div class="absolute top-2 right-2">
+          <BookmarkButton client:load postId={`video-bTqVqk7FSmY`} postTitle={`Nature Timelapse`} postUrl={`https://www.youtube.com/watch?v=bTqVqk7FSmY`} hideLabel={true} />
+        </div>
+      </div>
+      
+    </div>
+  </section>
+</Layout>
+
+<div id="lightbox" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/80 p-4">
+  <button id="lightbox-close" aria-label="Close" class="absolute top-4 right-4 rounded-full border px-3 py-1 text-sm bg-background hover:bg-accent transition">Close</button>
+  <div id="lightbox-content" class="w-full max-w-5xl aspect-video flex items-center justify-center"></div>
+  <style>
+    #lightbox.show { display: flex; animation: lbFade 150ms ease-out; }
+    @keyframes lbFade { from { opacity: 0 } to { opacity: 1 } }
+  </style>
+</div>
+
+<script>
+  const lb = document.getElementById('lightbox');
+  const lbContent = document.getElementById('lightbox-content');
+  const lbClose = document.getElementById('lightbox-close');
+
+  function openImage(src: string) {
+    if (!lb || !lbContent) return;
+    lbContent.innerHTML = '';
+    const img = document.createElement('img');
+    img.src = src;
+    img.alt = 'Preview';
+    img.className = 'max-h-[80vh] w-auto rounded-md shadow-lg';
+    lbContent.appendChild(img);
+    lb.classList.add('show');
+  }
+
+  function openYouTube(id: string) {
+    if (!lb || !lbContent) return;
+    lbContent.innerHTML = '';
+    const iframe = document.createElement('iframe');
+    iframe.width = '100%';
+    iframe.height = '100%';
+    iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+    iframe.allowFullscreen = true;
+    iframe.src = `https://www.youtube.com/embed/${id}?autoplay=1&rel=0`;
+    lbContent.appendChild(iframe);
+    lb.classList.add('show');
+  }
+
+  function closeLightbox() {
+    if (!lb || !lbContent) return;
+    lb.classList.remove('show');
+    lbContent.innerHTML = '';
+  }
+
+  document.addEventListener('click', (e) => {
+    const target = e.target;
+    if (!(target instanceof Element)) return;
+    const imgBtn = target.closest('[data-preview="image"]');
+    if (imgBtn && imgBtn instanceof HTMLElement && imgBtn.dataset.src) {
+      e.preventDefault();
+      openImage(imgBtn.dataset.src);
+      return;
+    }
+    const v = target.closest('[data-preview="video"]');
+    if (v && v instanceof HTMLElement && v.dataset.youtubeId) {
+      e.preventDefault();
+      openYouTube(v.dataset.youtubeId);
+    }
+  });
+
+  lbClose?.addEventListener('click', closeLightbox);
+  lb?.addEventListener('click', (e) => { if (e.target === lb) closeLightbox(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLightbox(); });
+</script>

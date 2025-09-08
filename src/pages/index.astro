@@ -1,0 +1,112 @@
+---
+import { BentoGrid, BentoGridItem } from "@/components/BentoGrid";
+import { Separator } from "@/components/ui/separator";
+import { interests } from "@/constants/interest";
+import { SkillIconComponents } from "@/constants/skills";
+import Layout from "../layouts/Layout.astro";
+import GitHubRepos from "@/components/GitHubRepos.astro";
+import { Image } from 'astro:assets';
+import { getSortedBlogEntries } from "@/content/util";
+import profileImage from "../assets/profile.jpg";
+
+const selfIntro =
+  "Hi there, I am aliefadityanugraha.\n Someone who loves the world of technology, especially in the field of programming. learn and develop skills in technologies such as Node.js, JavaScript, TypeScript, PHP, Laravel, Express.js, and Next.js.";
+
+const blogEntries = await getSortedBlogEntries();
+const latestPosts = blogEntries.slice(0, 3);
+---
+
+<Layout title="aliefadityanugraha - Home" description="Portfolio and blog of aliefadityanugraha">
+  <section class="flex flex-col md:flex-row gap-8 items-center md:items-start">
+    <div class="w-48 h-48 flex-shrink-0">
+      <div class="w-full h-full rounded-full p-[4px] bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 gradient-ring" style="view-transition-name: hero-avatar">
+        <div class="w-full h-full rounded-full bg-background">
+          <Image src={profileImage} alt="Profile" class="w-full h-full rounded-full object-cover shadow-md" />
+        </div>
+      </div>
+    </div>
+    <div class="flex flex-col gap-4 text-center md:text-left">
+      <h1 class="text-3xl sm:text-4xl font-bold tracking-tight" style="view-transition-name: hero-title">aliefadityanugraha</h1>
+      <p class="text-muted-foreground max-w-prose">{selfIntro}</p>
+      <div class="flex gap-3 flex-wrap justify-center md:justify-start">
+        <a href="/blog" class="px-4 py-2 rounded-md border bg-primary text-primary-foreground hover:opacity-90 transition" data-astro-prefetch="hover">Baca Blog</a>
+        <a href="#projects" class="px-4 py-2 rounded-md border hover:bg-accent transition">Lihat Proyek</a>
+        <a href="mailto:you@example.com" class="px-4 py-2 rounded-md border hover:bg-accent transition">Hubungi Saya</a>
+      </div>
+    </div>
+  </section>
+  
+  <Separator />
+  
+  <section id="projects" class="w-full">
+      <GitHubRepos />
+  </section>
+  
+  <Separator />
+  
+  <section>
+    <h3 class="scroll-m-20 text-2xl font-semibold tracking-tight">Tulisan Terbaru</h3>
+    <div class="mt-6 flex flex-col gap-4">
+      {latestPosts.map((entry) => (
+        <a href={`/blog/${entry.id}`} class="group" data-astro-prefetch="hover">
+          <div class="flex items-center justify-between">
+            <h4 class="font-semibold group-hover:underline">{entry.data.title}</h4>
+            <span class="text-xs text-muted-foreground">{new Date(entry.data.pubDate).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}</span>
+          </div>
+          <p class="text-sm text-muted-foreground">{entry.data.preview}</p>
+        </a>
+      ))}
+      <div>
+        <a href="/blog" class="text-sm hover:underline" data-astro-prefetch="hover">Lihat semua tulisan →</a>
+      </div>
+    </div>
+  </section>
+  
+  <Separator />
+  
+  <section class="w-full">
+    <h3 class="scroll-m-20 text-2xl font-semibold tracking-tight">
+      Tools and Technologies
+    </h3>
+    <div class="mt-6 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
+      {SkillIconComponents.map((Icon) => (
+        <div class="flex items-center justify-center p-3 rounded-md border bg-card">
+          <Icon size={48} class="opacity-70 hover:opacity-100 transition-opacity" />
+        </div>
+      ))}
+    </div>
+  </section>
+  
+  <section>
+    <h3 class="scroll-m-20 text-2xl font-semibold tracking-tight">
+      My Interests
+    </h3>
+
+    <BentoGrid class="mt-6">
+      {interests.map((int) => <BentoGridItem {...int} />)}
+    </BentoGrid>
+  </section>
+
+</Layout>
+
+<style>
+  .gradient-ring {
+    background-size: 200% 200%;
+    animation: gradientShift 10s ease-in-out infinite;
+    transition: filter 0.6s ease;
+  }
+
+  .gradient-ring:hover {
+    filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.35)) brightness(1.05);
+  }
+
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .gradient-ring { animation: none; }
+  }
+</style>

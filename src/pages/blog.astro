@@ -1,0 +1,19 @@
+---
+import { BlogSearch } from "@/components/BlogSearch";
+import { getSortedBlogEntries } from "@/content/util";
+import Layout from "@/layouts/Layout.astro";
+
+const blogEntries = await getSortedBlogEntries();
+---
+
+<Layout
+  title="aliefadityanugraha - Blogs"
+  description="All blog posts by aliefadityanugraha"
+>
+  <section>
+    <h3 class="scroll-m-20 text-2xl font-semibold tracking-tight">Blogs</h3>
+    <div class="mt-6">
+      <BlogSearch blogEntries={blogEntries} client:visible />
+    </div>
+  </section>
+</Layout>

@@ -3,6 +3,7 @@ import {
   createContext,
   useContext,
   onCleanup,
+  createEffect,
   type Component,
   type JSX,
 } from "solid-js";
@@ -43,13 +44,15 @@ const ToastItem: Component<{ toast: Toast; onRemove: (id: string) => void }> = (
 ) => {
   let timeoutId: number;
 
-  const duration = props.toast.duration || 5000;
-
-  if (typeof window !== "undefined") {
-    timeoutId = window.setTimeout(() => {
-      props.onRemove(props.toast.id);
-    }, duration);
-  }
+  createEffect(() => {
+    const duration = props.toast.duration || 5000;
+    
+    if (typeof window !== "undefined") {
+      timeoutId = window.setTimeout(() => {
+        props.onRemove(props.toast.id);
+      }, duration);
+    }
+  });
 
   onCleanup(() => {
     if (timeoutId) clearTimeout(timeoutId);

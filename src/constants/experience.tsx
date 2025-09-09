@@ -7,13 +7,11 @@ import { getImage } from "astro:assets";
 import { BsPersonBadgeFill } from "solid-icons/bs";
 import {
   FaBrandsGithub,
-  FaBrandsTiktok,
   FaSolidMoneyBill,
 } from "solid-icons/fa";
 import { FiExternalLink } from "solid-icons/fi";
 import { ImLibrary } from "solid-icons/im";
 import rustScript from "../assets/RustScript.png";
-import cvwo from "../assets/cvwo.svg";
 import rspack from "../assets/rspack.svg";
 import { SiNodedotjs, SiLaravel } from "solid-icons/si";
 
@@ -22,9 +20,7 @@ const rustScriptPng = await getImage({
   src: rustScript,
   format: "webp",
 });
-const cvwoSvg = await getImage({
-  src: cvwo,
-});
+
 const rspackSvg = await getImage({
   src: rspack,
 });

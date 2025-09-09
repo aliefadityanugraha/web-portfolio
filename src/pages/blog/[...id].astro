@@ -7,7 +7,6 @@ import { ExportPDFButton } from "@/components/ExportPDFButton";
 import { FloatingTOC, InlineTOC } from "@/components/TableOfContents";
 import {
   SocialShareButtons,
-  FloatingSocialShare,
 } from "@/components/SocialShareButtons";
 import { Separator } from "@/components/ui/separator";
 import { getSortedBlogEntries } from "@/content/util";
@@ -30,7 +29,7 @@ export type BlogPostProps = {
   index: number;
 };
 
-const { entry, index } = Astro.props as BlogPostProps;
+const { entry } = Astro.props as BlogPostProps;
 const item = entry.data;
 const blogTitle = item.title;
 const blogEntries = await getSortedBlogEntries();
@@ -130,12 +129,14 @@ const ogImage = thumbnail
   />
   <div class="flex flex-col gap-4 py-6">
     <h4 class="text-lg font-semibold">Share this article</h4>
-    <SocialShareButtons
-      url={currentUrl}
-      title={blogTitle}
-      description={item.description || item.preview}
-      client:visible
-    />
+    <div class="overflow-x-auto">
+      <SocialShareButtons
+        url={currentUrl}
+        title={blogTitle}
+        description={item.description || item.preview}
+        client:visible
+      />
+    </div>
   </div>
   <Separator />
   <section class="blog-content">

@@ -17,7 +17,6 @@ const SocialShareButtonsInner: Component<SocialShareButtonsProps> = (props) => {
 
   const shareUrl = () => encodeURIComponent(props.url);
   const shareTitle = () => encodeURIComponent(props.title);
-  const shareText = () => encodeURIComponent(props.description || props.title);
 
   const shareLinks = {
     twitter: () =>
@@ -131,7 +130,8 @@ const SocialShareButtonsInner: Component<SocialShareButtonsProps> = (props) => {
 
   const buttonClass = () =>
     cn(
-      "inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 hover:scale-105",
+      "inline-flex items-center gap-2 px-2 py-2 sm:px-3 sm:py-2 text-sm font-medium rounded-md transition-all duration-200 hover:scale-105",
+      "min-w-[2.5rem] sm:min-w-auto", // Ensure minimum width on mobile for touch targets
       isCompact() && "px-2 py-1.5 text-xs",
       isFloating() && "shadow-lg hover:shadow-xl",
     );
@@ -142,12 +142,13 @@ const SocialShareButtonsInner: Component<SocialShareButtonsProps> = (props) => {
     <div
       class={cn(
         "flex items-center gap-2",
+        "flex-wrap sm:flex-nowrap", // Allow wrapping on small screens
         isFloating() && "flex-col",
         props.class,
       )}
     >
       {!isCompact() && (
-        <span class="text-sm font-medium text-muted-foreground mr-2">
+        <span class="text-sm font-medium text-muted-foreground mr-2 hidden sm:block">
           Share:
         </span>
       )}
@@ -157,7 +158,7 @@ const SocialShareButtonsInner: Component<SocialShareButtonsProps> = (props) => {
         title="Share on Twitter"
       >
         <FiTwitter class={iconClass()} />
-        {!isCompact() && <span>Twitter</span>}
+        {!isCompact() && <span class="hidden sm:inline">Twitter</span>}
       </button>
       <button
         onClick={() => handleShare("LinkedIn", shareLinks.linkedin())}
@@ -165,7 +166,7 @@ const SocialShareButtonsInner: Component<SocialShareButtonsProps> = (props) => {
         title="Share on LinkedIn"
       >
         <FiLinkedin class={iconClass()} />
-        {!isCompact() && <span>LinkedIn</span>}
+        {!isCompact() && <span class="hidden sm:inline">LinkedIn</span>}
       </button>
       <button
         onClick={() => handleShare("Facebook", shareLinks.facebook())}
@@ -173,7 +174,7 @@ const SocialShareButtonsInner: Component<SocialShareButtonsProps> = (props) => {
         title="Share on Facebook"
       >
         <FiFacebook class={iconClass()} />
-        {!isCompact() && <span>Facebook</span>}
+        {!isCompact() && <span class="hidden sm:inline">Facebook</span>}
       </button>
       <button
         onClick={() => handleShare("WhatsApp", shareLinks.whatsapp())}
@@ -181,7 +182,7 @@ const SocialShareButtonsInner: Component<SocialShareButtonsProps> = (props) => {
         title="Share on WhatsApp"
       >
         <SiWhatsapp class={iconClass()} />
-        {!isCompact() && <span>WhatsApp</span>}
+        {!isCompact() && <span class="hidden sm:inline">WhatsApp</span>}
       </button>
       <button
         onClick={handleCopyLink}
@@ -192,7 +193,7 @@ const SocialShareButtonsInner: Component<SocialShareButtonsProps> = (props) => {
         title="Copy link"
       >
         <FiShare2 class={iconClass()} />
-        {!isCompact() && <span>Copy</span>}
+        {!isCompact() && <span class="hidden sm:inline">Copy</span>}
       </button>
     </div>
   );
@@ -215,14 +216,14 @@ export const FloatingSocialShare: Component<{
   description?: string;
 }> = (props) => {
   return (
-    <div class="fixed left-4 top-1/2 -translate-y-1/2 z-30 hidden lg:block">
+    <div class="fixed left-2 sm:left-4 top-1/2 -translate-y-1/2 z-30 hidden lg:block">
       <ToastProvider>
         <SocialShareButtonsInner
           url={props.url}
           title={props.title}
           description={props.description}
           variant="floating"
-          class="bg-background/80 backdrop-blur-sm border border-border rounded-lg p-3 shadow-lg"
+          class="bg-background/80 backdrop-blur-sm border border-border rounded-lg p-2 sm:p-3 shadow-lg"
         />
       </ToastProvider>
     </div>

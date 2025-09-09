@@ -9,6 +9,17 @@ type Repo = {
   language: string | null;
 };
 
+type GitHubNode = {
+  name: string;
+  url: string;
+  description?: string;
+  stargazerCount: number;
+  forkCount: number;
+  primaryLanguage?: {
+    name: string;
+  };
+};
+
 const username = import.meta.env.GITHUB_USERNAME || 'aliefadityanugraha';
 
 async function fetchTopRepos(): Promise<Repo[]> {
@@ -61,7 +72,7 @@ async function fetchPinnedRepos(): Promise<Repo[]> {
   if (!res.ok) return [];
   const json = await res.json();
   const nodes = json?.data?.user?.pinnedItems?.nodes ?? [];
-  return nodes.map((n: any) => ({
+  return nodes.map((n: GitHubNode) => ({
     name: n.name,
     html_url: n.url,
     description: n.description ?? null,

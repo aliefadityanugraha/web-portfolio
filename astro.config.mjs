@@ -44,6 +44,7 @@ export default defineConfig({
             "utils-vendor": ["html2canvas", "jspdf"],
           },
         },
+        external: ['bcryptjs', 'jsonwebtoken']
       },
     },
   },

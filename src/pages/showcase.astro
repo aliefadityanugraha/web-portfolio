@@ -35,23 +35,19 @@ const getTitleFromSrc = (src: string): string => {
     <p class="text-muted-foreground">Kumpulan foto dan video pilihan.</p>
   </section>
 
-  <Separator />
-
   <section class="w-full">
     <h3 class="scroll-m-20 text-2xl font-semibold tracking-tight">Foto</h3>
-    <div id="grid-container" class="mt-6 grid-layout">
+    <div id="grid-container" class="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4">
       {localImages.length > 0 ? (
         localImages.map(([, mod], i) => (
           <div class="group relative">
             <button type="button" data-preview="image" data-src={mod.default.src} class="block w-full text-left">
-              <div class="skeleton-placeholder">
-                 <Image
-                   src={mod.default}
-                   alt={getTitleFromSrc(mod.default.src)}
-                   class="lazy-image w-full object-cover rounded-md border transition-transform duration-300 group-hover:scale-[1.02]"
-                   loading="lazy"
-                 />
-               </div>
+              <Image
+                src={mod.default}
+                alt={getTitleFromSrc(mod.default.src)}
+                class="showcase-image w-full h-[200px] object-cover rounded-md border"
+                loading="lazy"
+              />
             </button>
             <div class="absolute top-2 right-2">
               <BookmarkButton client:load postId={`photo-${i}`} postTitle={getTitleFromSrc(mod.default.src)} postUrl={mod.default.src} hideLabel={true} />
@@ -64,13 +60,12 @@ const getTitleFromSrc = (src: string): string => {
         ].map((src, i) => (
           <div class="group relative">
             <button type="button" data-preview="image" data-src={src} class="block w-full text-left">
-              <div class="skeleton-placeholder">
-                 <img
-                   data-src={src}
-                   alt={getTitleFromSrc(src)}
-                   class="lazy-image w-full object-cover rounded-md border transition-transform duration-300 group-hover:scale-[1.02]"
-                 />
-               </div>
+              <img
+                src={src}
+                alt={getTitleFromSrc(src)}
+                class="showcase-image w-full h-[200px] object-cover rounded-md border"
+                loading="lazy"
+              />
             </button>
             <div class="absolute top-2 right-2">
               <BookmarkButton client:load postId={`photo-${i}`} postTitle={getTitleFromSrc(src)} postUrl={src} hideLabel={true} />
@@ -103,99 +98,10 @@ const getTitleFromSrc = (src: string): string => {
   </section>
 </Layout>
 
-<div id="lightbox" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/80 p-4">
+<div id="lightbox" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/80 p-4 opacity-0 transition-opacity duration-150 ease-out data-[show]:flex data-[show]:opacity-100 data-[show]:animate-in data-[show]:fade-in">
   <button id="lightbox-close" aria-label="Close" class="absolute top-4 right-4 rounded-full border px-3 py-1 text-sm bg-background hover:bg-accent transition">Close</button>
   <div id="lightbox-content" class="w-full max-w-5xl aspect-video flex items-center justify-center"></div>
-  <style>
-    #lightbox.show { display: flex; animation: lbFade 150ms ease-out; }
-    @keyframes lbFade { from { opacity: 0 } to { opacity: 1 } }
-    
-    /* Grid Layout */
-    .grid-layout {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 1rem;
-    }
-    
-    @media (min-width: 640px) {
-      .grid-layout {
-        grid-template-columns: repeat(3, 1fr);
-      }
-    }
-    
-    @media (min-width: 768px) {
-      .grid-layout {
-        grid-template-columns: repeat(4, 1fr);
-      }
-    }
-    
-    @media (min-width: 1024px) {
-      .grid-layout {
-        grid-template-columns: repeat(4, 1fr);
-      }
-    }
-    
-    .grid-layout > div {
-      display: flex;
-      flex-direction: column;
-    }
-    
-    .grid-layout img {
-      width: 100%;
-      height: 200px;
-      object-fit: cover;
-      border-radius: 0.375rem;
-      display: block;
-    }
-    
-    /* Skeleton Placeholder */
-    .skeleton-placeholder {
-      position: relative;
-      overflow: hidden;
-      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-      background-size: 200% 100%;
-      animation: skeleton-loading 1.5s infinite;
-      border-radius: 0.375rem;
-    }
-    
-    /* Grid skeleton placeholder */
-    .skeleton-placeholder {
-      height: 200px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    .skeleton-placeholder.loaded {
-      height: auto;
-      background: none;
-      animation: none;
-    }
-    
-    .dark .skeleton-placeholder {
-      background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 50%, #2a2a2a 75%);
-      background-size: 200% 100%;
-    }
-    
-    @keyframes skeleton-loading {
-      0% { background-position: 200% 0; }
-      100% { background-position: -200% 0; }
-    }
-    
-    .lazy-image {
-      opacity: 0;
-      transition: opacity 0.3s ease-in-out;
-    }
-    
-    .lazy-image.loaded {
-      opacity: 1;
-    }
-    
-    .skeleton-placeholder.loaded {
-      background: none;
-      animation: none;
-    }
-  </style>
+
 </div>
 
 <script>
@@ -203,103 +109,10 @@ const getTitleFromSrc = (src: string): string => {
   const lbContent = document.getElementById('lightbox-content');
   const lbClose = document.getElementById('lightbox-close');
 
-  // Lazy Loading with Intersection Observer
-  function initLazyLoading() {
-    const lazyImages = document.querySelectorAll('.lazy-image');
-    
-    // First, check for already loaded images and remove skeleton
-    lazyImages.forEach(img => {
-      const placeholder = img.closest('.skeleton-placeholder');
-      if (img instanceof HTMLImageElement && img.complete && img.naturalHeight > 0) {
-        img.classList.add('loaded');
-        placeholder?.classList.add('loaded');
-      }
-    });
-    
-    const imageObserver = new IntersectionObserver((entries, observer) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const img = entry.target as HTMLImageElement;
-          const placeholder = img.closest('.skeleton-placeholder');
-          
-          // Skip if already processed
-          if (img.classList.contains('loaded')) {
-            observer.unobserve(img);
-            return;
-          }
-          
-          // For regular img elements
-          if (img.dataset.src) {
-            img.src = img.dataset.src;
-            img.removeAttribute('data-src');
-          }
-          
-          img.onload = () => {
-            img.classList.add('loaded');
-            placeholder?.classList.add('loaded');
-          };
-          
-          img.onerror = () => {
-            placeholder?.classList.add('loaded');
-            console.warn('Failed to load image:', img.src || img.dataset.src);
-          };
-          
-          // For Astro Image components that already have src
-          if (img.src && !img.dataset.src) {
-            if (img instanceof HTMLImageElement && img.complete && img.naturalHeight > 0) {
-              img.classList.add('loaded');
-              placeholder?.classList.add('loaded');
-            }
-          }
-          
-          observer.unobserve(img);
-        }
-      });
-    }, {
-      rootMargin: '50px 0px',
-      threshold: 0.01
-    });
-    
-    lazyImages.forEach(img => {
-      // Only observe images that aren't already loaded
-      if (!img.classList.contains('loaded')) {
-        imageObserver.observe(img);
-      }
-    });
-  }
-
-  // Grid Layout Optimization
-  function optimizeGrid() {
-    const container = document.getElementById('grid-container');
-    if (!container) return;
-    
-    const images = container.querySelectorAll('img');
-    
-    images.forEach(img => {
-      const placeholder = img.closest('.skeleton-placeholder');
-      
-      // Check if image is already loaded (complete and has natural dimensions)
-      if (img instanceof HTMLImageElement && img.complete && img.naturalHeight > 0) {
-        img.classList.add('loaded');
-        placeholder?.classList.add('loaded');
-      } else if (img instanceof HTMLImageElement && !img.complete) {
-        // Add load event listener for images that aren't loaded yet
-        const handleLoad = () => {
-          img.classList.add('loaded');
-          placeholder?.classList.add('loaded');
-          img.removeEventListener('load', handleLoad);
-        };
-        
-        const handleError = () => {
-          placeholder?.classList.add('loaded');
-          img.removeEventListener('error', handleError);
-          console.warn('Failed to load image:', img.src);
-        };
-        
-        img.addEventListener('load', handleLoad);
-        img.addEventListener('error', handleError);
-      }
-    });
+  // Simplified image handling - no lazy loading needed
+  function initializeImages() {
+    // Just ensure lightbox functionality works
+    console.log('Images initialized with native lazy loading');
   }
 
   function openImage(src: string) {
@@ -310,7 +123,8 @@ const getTitleFromSrc = (src: string): string => {
     img.alt = 'Preview';
     img.className = 'max-h-[80vh] w-auto rounded-md shadow-lg';
     lbContent.appendChild(img);
-    lb.classList.add('show');
+    lb.setAttribute('data-show', 'true');
+    lb.classList.remove('hidden');
   }
 
   function openYouTube(id: string) {
@@ -323,19 +137,41 @@ const getTitleFromSrc = (src: string): string => {
     iframe.allowFullscreen = true;
     iframe.src = `https://www.youtube.com/embed/${id}?autoplay=1&rel=0`;
     lbContent.appendChild(iframe);
-    lb.classList.add('show');
+    lb.setAttribute('data-show', 'true');
+    lb.classList.remove('hidden');
   }
 
   function closeLightbox() {
     if (!lb || !lbContent) return;
-    lb.classList.remove('show');
+    lb.removeAttribute('data-show');
+    lb.classList.add('hidden');
     lbContent.innerHTML = '';
   }
 
   // Initialize everything
   function init() {
-    initLazyLoading();
-    optimizeGrid();
+    initializeImages();
+    
+    // Add close button event listener
+    if (lbClose) {
+      lbClose.addEventListener('click', closeLightbox);
+    }
+    
+    // Close lightbox when clicking outside content
+    if (lb) {
+      lb.addEventListener('click', (e) => {
+        if (e.target === lb) {
+          closeLightbox();
+        }
+      });
+    }
+    
+    // Close lightbox with Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeLightbox();
+      }
+    });
   }
 
   document.addEventListener('click', (e) => {
@@ -353,10 +189,16 @@ const getTitleFromSrc = (src: string): string => {
       openYouTube(v.dataset.youtubeId);
     }
   });
-
-  lbClose?.addEventListener('click', closeLightbox);
-  lb?.addEventListener('click', (e) => { if (e.target === lb) closeLightbox(); });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLightbox(); });
+  
+  // Initialize when DOM is ready
+    document.addEventListener('DOMContentLoaded', init);
+    
+    // Fallback for cases where DOMContentLoaded already fired
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
   
   // Initialize on DOM ready
   if (document.readyState === 'loading') {
@@ -384,3 +226,14 @@ const getTitleFromSrc = (src: string): string => {
      }
    });
 </script>
+
+<style>
+  /* Simple image styles */
+  .showcase-image {
+    transition: transform 0.3s ease;
+  }
+  
+  .showcase-image:hover {
+    transform: scale(1.05);
+  }
+</style>

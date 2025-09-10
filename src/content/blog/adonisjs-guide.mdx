@@ -1,0 +1,91 @@
+---
+title: "AdonisJS: Framework Fullstack Modern untuk Developer JavaScript"
+pubDate: "2025-09-09 14:15:00"
+thumbnail: "https://images.unsplash.com/photo-1581276879432-15e50529f34b?q=80&w=1000&auto=format&fit=crop"
+description: "Pelajari mengapa AdonisJS menjadi pilihan solid untuk pengembangan fullstack modern dengan dukungan TypeScript, ORM bawaan, dan arsitektur MVC yang rapi."
+preview: "Pelajari mengapa AdonisJS menjadi pilihan solid untuk pengembangan fullstack modern dengan dukungan TypeScript, ORM bawaan, dan arsitektur MVC yang rapi."
+categories: ["astro", "web development", "javascript", "performance"]
+---
+
+import { Code } from '@/components/CodeBlock'
+
+AdonisJS adalah **framework Node.js** berbasis TypeScript yang mengadopsi arsitektur **MVC** (Model-View-Controller), membuat pengembangan aplikasi web menjadi **terstruktur, scalable, dan mudah dipelihara**.  
+
+Berbeda dengan Express atau Koa yang ringan dan memerlukan banyak konfigurasi manual, AdonisJS hadir dengan **baterai lengkap** seperti ORM, validasi, autentikasi, hingga sistem job queue.  
+
+## Mengapa Memilih AdonisJS?
+
+Berikut beberapa alasan mengapa developer semakin melirik AdonisJS:
+
+- **Fullstack Terintegrasi**: Mendukung backend dan frontend rendering melalui Edge Template Engine.
+- **Dukungan TypeScript**: Dikembangkan dengan TypeScript sejak awal, menjaga codebase tetap aman dan terprediksi.
+- **ORM Kuat (Lucid)**: ORM bawaan yang mendukung migration, relation, dan query builder.
+- **Sistem Autentikasi Lengkap**: Mulai dari session-based, API token, hingga JWT.
+- **Ekosistem Modern**: Middleware, validator, dan sistem IoC Container yang memudahkan pengembangan modular.
+
+## Instalasi dan Setup
+
+Instalasi AdonisJS sangat sederhana. Pastikan Node.js sudah terpasang di sistem Anda.  
+Gunakan perintah berikut untuk memulai proyek baru:
+
+<Code lang="bash">{`npm init adonisjs@latest my-app`}</Code>
+
+Lalu masuk ke folder proyek:
+
+<Code lang="bash">{`cd my-app && npm install`}</Code>
+
+Jalankan server development:
+
+<Code lang="bash">{`node ace serve --watch`}</Code>
+
+## Contoh Routing Sederhana
+
+AdonisJS menggunakan file `routes.ts` untuk mendefinisikan rute.  
+Contoh kode untuk membuat endpoint **Hello World**:
+
+```
+{`// start/routes.ts
+import Route from '@ioc:Adonis/Core/Route'
+
+Route.get('/', async () => {
+  return { message: 'Hello, AdonisJS!' }
+})`}
+```
+
+Buka browser di `http://localhost:3333`, Anda akan melihat JSON:
+
+```json
+{ "message": "Hello, AdonisJS!" }
+```
+
+## Struktur Folder
+
+Proyek AdonisJS secara default memiliki struktur berikut:
+
+```plaintext
+my-app/
+├── app/          # Controller, Middleware, Models
+├── config/       # Konfigurasi aplikasi
+├── database/     # Migrations, seeders
+├── public/       # Static files
+├── resources/    # Views (Edge templates)
+├── start/        # Routes & entry point
+└── .env          # Environment variables
+```
+
+## Kapan Menggunakan AdonisJS?
+
+Gunakan AdonisJS jika Anda ingin:
+
+- **Aplikasi skala menengah-besar** dengan arsitektur jelas.
+- **Fullstack rendering** tanpa harus memisahkan frontend dan backend.
+- **Integrasi database** dengan ORM modern bawaan.
+
+Namun, untuk proyek **API ringan** atau **serverless**, framework ringan seperti Express mungkin lebih sesuai.
+
+## Kesimpulan
+
+AdonisJS memberikan pengalaman **pengembangan fullstack yang terpadu** di dunia Node.js.  
+Dengan fitur bawaan yang lengkap, developer bisa fokus pada **logika bisnis** tanpa pusing menyiapkan struktur dari nol.  
+
+Mulailah dengan [Dokumentasi Resmi AdonisJS](https://docs.adonisjs.com) untuk mempelajari lebih dalam.

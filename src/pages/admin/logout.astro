@@ -1,0 +1,13 @@
+---
+export const prerender = false;
+
+import { logout } from '../../utils/adminMiddleware';
+
+// Handle logout request
+if (Astro.request.method === 'POST' || Astro.request.method === 'GET') {
+  return logout(Astro);
+}
+
+// If somehow accessed directly, redirect to login
+return Astro.redirect('/admin/login');
+---

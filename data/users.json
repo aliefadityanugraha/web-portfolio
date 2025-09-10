@@ -1,0 +1,18 @@
+[
+  {
+    "id": "mfc1tyr020ev4byzxua",
+    "username": "admin",
+    "password": "$2b$12$8yeqRiq9Z0415tIVOVkbaOh/DdB2.S4zHXYle3W20amHA9DrOqIN6",
+    "role": "admin",
+    "createdAt": "2025-09-09T04:26:56.940Z",
+    "updatedAt": "2025-09-09T12:34:09.133Z"
+  },
+  {
+    "id": "mfc1tyr020ev4yzxua2",
+    "username": "aliefadityanugraha",
+    "password": "$2b$12$8yeqRiq9Z0415tIVOVkbaOh/DdB2.S4zHXYle3W20amHA9DrOqIN6",
+    "role": "admin",
+    "createdAt": "2025-09-09T04:26:56.940Z",
+    "updatedAt": "2025-09-09T12:34:09.133Z"
+  }
+]

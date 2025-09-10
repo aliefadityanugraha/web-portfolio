@@ -1,0 +1,418 @@
+---
+export const prerender = false;
+
+import Layout from '../../layouts/Layout.astro';
+import { requireAuth, getCurrentUser } from '../../utils/adminMiddleware';
+import { getCollection } from 'astro:content';
+import fs from 'fs';
+import path from 'path';
+
+// Check authentication
+const authRedirect = requireAuth(Astro);
+if (authRedirect) {
+  return authRedirect;
+}
+
+// Get current user
+const currentUser = getCurrentUser(Astro);
+if (!currentUser) {
+  return Astro.redirect('/admin/login');
+}
+
+let successMessage = '';
+let errorMessage = '';
+
+// Handle POST requests
+if (Astro.request.method === 'POST') {
+  const formData = await Astro.request.formData();
+  const action = formData.get('action');
+  
+  if (action === 'upload') {
+    // Handle file upload
+    try {
+      const file = formData.get('mdxFile') as File;
+      const filename = (formData.get('filename') as string)?.trim();
+      
+      if (!file || !filename) {
+        errorMessage = 'File dan nama file harus diisi';
+      } else if (!filename.toLowerCase().endsWith('.mdx')) {
+        errorMessage = 'Nama file harus berakhiran .mdx';
+      } else if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        errorMessage = 'Ukuran file maksimal 5MB';
+      } else {
+        // Read file content
+        const content = await file.text();
+        
+        // Basic MDX validation - check for frontmatter
+        if (!content.startsWith('---')) {
+          errorMessage = 'File MDX harus memiliki frontmatter yang dimulai dengan ---';
+        } else {
+          // Save file to content/blog directory
+          const contentDir = path.join(process.cwd(), 'src', 'content', 'blog');
+          const filePath = path.join(contentDir, filename);
+          
+          // Check if file already exists
+          if (fs.existsSync(filePath)) {
+            errorMessage = 'File dengan nama tersebut sudah ada';
+          } else {
+            // Write file
+            fs.writeFileSync(filePath, content, 'utf-8');
+            successMessage = `Artikel ${filename} berhasil diupload!`;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      errorMessage = 'Terjadi kesalahan saat mengupload file';
+    }
+  } else if (action === 'delete') {
+    // Handle delete request
+    const articleId = formData.get('articleId');
+    
+    if (articleId) {
+      try {
+        const articlePath = path.join(process.cwd(), 'src', 'content', 'blog', `${articleId}.mdx`);
+        
+        // Check if file exists
+        if (fs.existsSync(articlePath)) {
+          // Delete the file
+          fs.unlinkSync(articlePath);
+          successMessage = 'Artikel berhasil dihapus!';
+        } else {
+          errorMessage = 'Artikel tidak ditemukan!';
+        }
+      } catch (error) {
+        console.error('Error deleting article:', error);
+        errorMessage = 'Gagal menghapus artikel!';
+      }
+    }
+  }
+}
+
+// Get all blog articles
+let articles: any = [];
+try {
+  articles = await getCollection('blog');
+  // Sort by date (newest first)
+  articles.sort((a: any, b: any) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime());
+} catch (error) {
+  console.error('Error loading articles:', error);
+}
+---
+
+<Layout title="Kelola Artikel - Admin">
+  <div class="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+    <!-- Header -->
+    <header class="bg-card/80 backdrop-blur-sm border-b border-border/50 sticky top-0 z-40">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center py-6">
+          <div class="flex items-center space-x-4">
+            <div class="p-2 bg-primary/10 rounded-lg">
+              <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <div>
+              <h1 class="text-2xl font-bold text-foreground">Kelola Artikel</h1>
+              <p class="text-muted-foreground">Upload dan kelola semua artikel blog Anda</p>
+            </div>
+          </div>
+          <div class="flex items-center space-x-4">
+            <div class="hidden sm:flex items-center space-x-2 text-sm text-muted-foreground bg-muted/50 px-3 py-2 rounded-lg">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              <span>{articles.length} artikel</span>
+            </div>
+            <a
+              href="/admin/dashboard"
+              class="inline-flex items-center px-4 py-2 border border-border text-sm font-medium rounded-lg text-foreground bg-background hover:bg-accent transition-all duration-200 hover:shadow-md"
+            >
+              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Dashboard
+            </a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      <!-- Success Message -->
+      {successMessage && (
+        <div class="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl animate-in slide-in-from-top-2 duration-300">
+          <div class="flex items-center">
+            <div class="p-1 bg-green-100 dark:bg-green-800 rounded-full mr-3">
+              <svg class="w-4 h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <p class="text-green-800 dark:text-green-200 font-medium">{successMessage}</p>
+          </div>
+        </div>
+      )}
+
+      <!-- Error Message -->
+      {errorMessage && (
+        <div class="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl animate-in slide-in-from-top-2 duration-300">
+          <div class="flex items-center">
+            <div class="p-1 bg-red-100 dark:bg-red-800 rounded-full mr-3">
+              <svg class="w-4 h-4 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </div>
+            <p class="text-red-800 dark:text-red-200 font-medium">{errorMessage}</p>
+          </div>
+        </div>
+      )}
+
+      
+
+      <div class="grid grid-cols-1 gap-8">
+        <!-- Upload Section -->
+        <div class="bg-card rounded-lg border border-border p-6">
+
+          <h2 class="text-lg font-semibold text-foreground mb-4 flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+            Upload Artikel Baru
+          </h2>
+          
+          <form method="POST" enctype="multipart/form-data" class="space-y-4">
+            <input type="hidden" name="action" value="upload" />
+            
+            <div>
+              <label for="filename" class="block text-sm font-medium text-foreground mb-2">
+                Nama File (dengan ekstensi .mdx)
+              </label>
+              <input
+                type="text"
+                id="filename"
+                name="filename"
+                placeholder="contoh: artikel-baru.mdx"
+                required
+                class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+            </div>
+            
+            <div>
+              <label for="mdxFile" class="block text-sm font-medium text-foreground mb-2">
+                Pilih File MDX
+              </label>
+              <input
+                type="file"
+                id="mdxFile"
+                name="mdxFile"
+                accept=".mdx,.md"
+                required
+                class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+              />
+            </div>
+            
+            <div class="bg-muted p-4 rounded-md">
+              <h3 class="text-sm font-medium text-foreground mb-2">Persyaratan File:</h3>
+              <ul class="text-sm text-muted-foreground space-y-1">
+                <li>• File harus berformat .mdx</li>
+                <li>• Ukuran maksimal 5MB</li>
+                <li>• Harus memiliki frontmatter yang dimulai dengan ---</li>
+                <li>• Nama file tidak boleh sama dengan file yang sudah ada</li>
+              </ul>
+            </div>
+            
+            <button
+              type="submit"
+              class="w-full bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors font-medium"
+            >
+              Upload Artikel
+            </button>
+          </form>
+        </div>
+
+        <!-- Articles List Section -->
+        <div class="bg-card rounded-lg border border-border p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-foreground">Artikel ({articles.length})</h2>
+          </div>
+          <!-- Search Bar -->
+          <div class="mb-6">
+            <div class="relative max-w-md">
+              <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                id="searchInput"
+                placeholder="Cari artikel..."
+                class="w-full pl-10 pr-4 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+            </div>
+          </div>
+          
+          {articles.length === 0 ? (
+            <div class="text-center py-8">
+              <svg class="mx-auto h-12 w-12 text-muted-foreground mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <h3 class="text-lg font-medium text-foreground mb-2">Belum ada artikel</h3>
+              <p class="text-muted-foreground">Upload artikel pertama Anda menggunakan form di sebelah kiri.</p>
+            </div>
+          ) : (
+            <div id="articlesContainer" class="space-y-3">
+              {articles.map((article: any) => (
+                <div class="article-card flex items-center justify-between p-4 bg-muted/50 rounded-lg border border-border hover:bg-muted transition-colors" data-title={article.data.title.toLowerCase()}>
+                  <div class="flex-1 min-w-0">
+                    <h3 class="font-medium text-foreground truncate">
+                      {article.data.title}
+                    </h3>
+                    <p class="text-sm text-muted-foreground mt-1">
+                      {new Date(article.data.date).toLocaleDateString('id-ID', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </p>
+                  </div>
+                  <div class="flex items-center gap-2 ml-4">
+                    <a
+                      href={`/blog/${article.id}`}
+                      target="_blank"
+                      class="px-3 py-1 text-sm text-primary hover:text-primary/80 transition-colors"
+                    >
+                      Lihat
+                    </a>
+                    <button
+                      class="delete-btn px-3 py-1 text-sm text-destructive hover:text-destructive/80 transition-colors"
+                      data-article-id={article.id}
+                      data-article-title={article.data.title}
+                    >
+                      Hapus
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          <!-- No Results Message -->
+          <div id="noResults" class="hidden text-center py-8">
+            <h3 class="text-lg font-medium text-foreground mb-2">Tidak ada artikel yang ditemukan</h3>
+            <p class="text-muted-foreground">Coba ubah kata kunci pencarian.</p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="deleteModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-card rounded-lg p-6 max-w-md w-full mx-4 border border-border">
+      <h3 class="text-lg font-semibold text-foreground mb-4">Konfirmasi Hapus</h3>
+      <p class="text-muted-foreground mb-6">
+        Apakah Anda yakin ingin menghapus artikel "<span id="articleTitle"></span>"?
+        </p>
+      <p class="text-sm text-destructive mb-6">
+        Tindakan ini tidak dapat dibatalkan.
+      </p>
+      <div class="flex justify-end space-x-3">
+        <button
+          id="cancelDelete"
+          class="px-4 py-2 text-sm font-medium text-foreground bg-background border border-border rounded-md hover:bg-accent transition-colors"
+        >
+          Batal
+        </button>
+        <form method="POST" style="display: inline;">
+          <input type="hidden" name="action" value="delete" />
+          <input type="hidden" name="articleId" id="articleIdInput" />
+          <button
+            type="submit"
+            class="px-4 py-2 text-sm font-medium text-destructive-foreground bg-destructive rounded-md hover:bg-destructive/90 transition-colors"
+          >
+            Ya, Hapus
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Search functionality
+    const searchInput = document.getElementById('searchInput') as HTMLInputElement;
+    const articlesContainer = document.getElementById('articlesContainer') as HTMLElement;
+    const noResults = document.getElementById('noResults') as HTMLElement;
+    
+    function filterArticles() {
+      const searchTerm = searchInput?.value.toLowerCase() || '';
+      const articles = Array.from(document.querySelectorAll('.article-card'));
+      let visibleCount = 0;
+      
+      articles.forEach(article => {
+        const title = (article as HTMLElement).getAttribute('data-title') || '';
+        if (title.includes(searchTerm)) {
+          (article as HTMLElement).style.display = 'flex';
+          visibleCount++;
+        } else {
+          (article as HTMLElement).style.display = 'none';
+        }
+      });
+      
+      if (visibleCount === 0 && searchTerm) {
+        noResults?.classList.remove('hidden');
+      } else {
+        noResults?.classList.add('hidden');
+      }
+    }
+    
+    searchInput?.addEventListener('input', filterArticles);
+    
+    // Delete functionality
+    const deleteModal = document.getElementById('deleteModal') as HTMLElement;
+    const articleTitleSpan = document.getElementById('articleTitle') as HTMLElement;
+    const articleIdInput = document.getElementById('articleIdInput') as HTMLInputElement;
+    const cancelButton = document.getElementById('cancelDelete') as HTMLElement;
+    
+    function closeModal() {
+      deleteModal?.classList.add('hidden');
+      deleteModal?.classList.remove('flex');
+    }
+    
+    // Handle delete button clicks
+    document.addEventListener('click', function(e) {
+      if (e.target && e.target instanceof Element && e.target.closest('.delete-btn')) {
+        const button = e.target.closest('.delete-btn');
+        const articleId = button?.getAttribute('data-article-id');
+        const articleTitle = button?.getAttribute('data-article-title');
+        
+        if (articleId && articleTitle && articleTitleSpan && articleIdInput) {
+          articleTitleSpan.textContent = articleTitle;
+          articleIdInput.value = articleId;
+          deleteModal?.classList.remove('hidden');
+          deleteModal?.classList.add('flex');
+        }
+      }
+    });
+    
+    // Handle cancel button
+    cancelButton?.addEventListener('click', function() {
+      closeModal();
+    });
+    
+    // Handle click outside modal
+    deleteModal?.addEventListener('click', function(e) {
+      if (e.target === deleteModal) {
+        closeModal();
+      }
+    });
+    
+    // Handle escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && deleteModal && !deleteModal.classList.contains('hidden')) {
+        closeModal();
+      }
+    });
+  });
+</script>

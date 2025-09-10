@@ -1,0 +1,115 @@
+---
+import { ClientRouter } from "astro:transitions";
+import ThemeScript from "@/components/ThemeScript.astro";
+import { ToastProvider } from "@/components/ToastProvider";
+import "@/index.css";
+import { AstroFont } from "astro-font";
+
+import favicon from "../assets/favicon.ico";
+
+export type LoginLayoutProps = {
+  title: string;
+  description?: string;
+};
+
+const { title = "Admin Login", description = "Admin login page" } = Astro.props as LoginLayoutProps;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content={description} />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/x-icon" href={favicon} />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+    
+    <!-- Resource hints for faster loading -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <ClientRouter />
+    
+    <style>
+      @view-transition {
+        navigation: auto;
+      }
+      
+      /* Page transition classes */
+      .page-transition-out {
+        opacity: 0.8;
+        transition: opacity 0.06s ease-out;
+      }
+      
+      .page-transition-in {
+        opacity: 1;
+        transform: translateX(0);
+        transition: opacity 0.12s ease-in, transform 0.12s ease-in;
+      }
+      
+      /* Smooth page transitions */
+      html {
+        view-transition-name: root;
+        scrollbar-gutter: stable;
+      }
+      
+      /* Login specific styles */
+      body {
+        background: linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--muted)) 100%);
+      }
+      
+      .login-container {
+        backdrop-filter: blur(10px);
+        background: hsla(var(--background), 0.8);
+        border: 1px solid hsl(var(--border));
+      }
+    </style>
+    
+    <AstroFont
+      config={[
+        {
+          src: [],
+          name: "Inter",
+          googleFontsURL:
+            "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap",
+          display: "swap",
+          selector: "body",
+          fallback: "sans-serif",
+        },
+      ]}
+    />
+
+    <ThemeScript />
+
+    <script>
+      // Theme persistence during navigation
+      document.addEventListener('astro:after-swap', () => {
+        const theme = localStorage.getItem('theme') || 'system';
+        document.documentElement.classList.toggle('dark', 
+          theme === 'dark' || 
+          (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches));
+      });
+
+      // Handle navigation transitions
+      document.addEventListener('astro:before-preparation', () => {
+        document.documentElement.classList.add('page-transition-out');
+      });
+
+      document.addEventListener('astro:after-swap', () => {
+        document.documentElement.classList.remove('page-transition-out');
+        document.documentElement.classList.add('page-transition-in');
+        
+        setTimeout(() => {
+          document.documentElement.classList.remove('page-transition-in');
+        }, 160);
+      });
+    </script>
+  </head>
+  <body class="antialiased min-h-screen flex items-center justify-center p-4">
+    <ToastProvider>
+      <div class="login-container rounded-2xl shadow-2xl max-w-md w-full p-8">
+        <slot />
+      </div>
+    </ToastProvider>
+  </body>
+</html>

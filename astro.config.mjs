@@ -7,14 +7,16 @@ import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeSlug from "rehype-slug";
 import remarkGfm from "remark-gfm";
 import remarkToc from "remark-toc";
+import vercel from '@astrojs/vercel/serverless';
 
 export default defineConfig({
   prefetch: {
     prefetchAll: true,
     defaultStrategy: "hover",
   },
-  output: "static",
-  site: "https://aliefadityanugraha.my.id/",
+  output: "server",
+  adapter: vercel({}),
+  site: "https://aliefaditya.cloud/",
   image: {
     domains: ["miro.medium.com"],
   },
